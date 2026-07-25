@@ -327,15 +327,3 @@ After running Scenarios A and B:
 **What this demonstrates:** Full observability. Every decision is traceable, every metric is measurable.
 
 ---
-
-## 10. Future Work
-
-- **Persistent healing memory:** Store successful fix strategies in a vector database, retrieve them for similar future tasks
-- **Adaptive thresholds:** Use SigNoz metrics to automatically tune the 0.88 score floor based on observed quality distribution
-- **Multi-model fallback:** If the primary LLM is degraded (detected via SigNoz metrics), automatically switch to a backup model
-- **SigNoz alerting integration:** Configure SigNoz alerts when healing success rate drops below a threshold, triggering operator notification
-- **Tool-use agents:** Extend agents to call external tools (web search, code execution) with the same observability and healing guarantees
-
----
-
-*Built for the SigNoz Hackathon 2025.*
