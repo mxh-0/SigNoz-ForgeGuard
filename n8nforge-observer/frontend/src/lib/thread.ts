@@ -69,6 +69,22 @@ export function getRecentTasks(limit = 12): ThreadNode[] {
     .slice(0, limit)
 }
 
+/** Remove a single task from local history. */
+export function removeTask(taskId: string): void {
+  const map = readAll()
+  delete map[taskId]
+  writeAll(map)
+}
+
+/** Clear all task history. */
+export function clearAllTasks(): void {
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    // non-fatal
+  }
+}
+
 /**
  * Build the prompt for a follow-up run. The agents get the original task plus
  * the previous result and the new instruction, so the refinement has context.

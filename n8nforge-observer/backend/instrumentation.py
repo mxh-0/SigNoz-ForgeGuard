@@ -32,9 +32,16 @@ from opentelemetry.trace import StatusCode
 def setup_telemetry() -> bool:
     """
     Initialize OpenTelemetry tracing + metrics. Exports to SigNoz via OTLP.
+    Supports both SigNoz Cloud (with ingestion key) and self-hosted (no auth).
     Called once at app startup.
     """
     otel_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+    ingestion_key = os.getenv("SIGNOZ_INGESTION_KEY", "")
+
+    # Build headers for SigNoz Cloud authentication
+    headers = {}
+    if ingestion_key:
+        headers["signoz-ingestion-key"] = ingestion_key
 
     try:
         resource = Resource(attributes={
@@ -44,13 +51,19 @@ def setup_telemetry() -> bool:
         })
 
         # Traces
-        trace_exporter = OTLPSpanExporter(endpoint=f"{otel_endpoint}/v1/traces")
+        trace_exporter = OTLPSpanExporter(
+            endpoint=f"{otel_endpoint}/v1/traces",
+            headers=headers,
+        )
         trace_provider = TracerProvider(resource=resource)
         trace_provider.add_span_processor(BatchSpanProcessor(trace_exporter))
         trace.set_tracer_provider(trace_provider)
 
         # Metrics
-        metric_exporter = OTLPMetricExporter(endpoint=f"{otel_endpoint}/v1/metrics")
+        metric_exporter = OTLPMetricExporter(
+            endpoint=f"{otel_endpoint}/v1/metrics",
+            headers=headers,
+        )
         metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=10000)
         meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
         metrics.set_meter_provider(meter_provider)
@@ -59,7 +72,8 @@ def setup_telemetry() -> bool:
         FastAPIInstrumentor.instrument()
         HTTPXClientInstrumentor().instrument()
 
-        print(f"[SigNoz] Telemetry active -- traces + metrics --> {otel_endpoint}")
+        cloud_note = " (SigNoz Cloud)" if ingestion_key else " (self-hosted)"
+        print(f"[SigNoz] Telemetry active{cloud_note} -- traces + metrics --> {otel_endpoint}")
         return True
 
     except Exception as e:

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, XCircle, Clock, Zap, ArrowRight, History, GitBranch } from 'lucide-react'
-import { checkHealth, getActiveContexts } from '../lib/api'
-import { getRecentTasks, type ThreadNode } from '../lib/thread'
+import { CheckCircle2, XCircle, Clock, Zap, ArrowRight, History, GitBranch, Trash2 } from 'lucide-react'
+import { checkHealth, getActiveContexts, cancelTask } from '../lib/api'
+import { getRecentTasks, removeTask, clearAllTasks, type ThreadNode } from '../lib/thread'
 
 function relativeTime(ts: number): string {
   const secs = Math.floor((Date.now() - ts) / 1000)
@@ -103,19 +103,32 @@ export default function Dashboard() {
         ) : (
           <div className="divide-y divide-gray-50">
             {activeTasks.map((id) => (
-              <Link
+              <div
                 key={id}
-                to={`/task/${id}`}
                 className="flex items-center justify-between px-6 py-4 transition hover:bg-gray-50"
               >
-                <div className="flex items-center gap-3">
+                <Link to={`/task/${id}`} className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
                   <code className="font-mono text-sm text-gray-700">{id}</code>
+                </Link>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                    running
+                  </span>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault()
+                      try { await cancelTask(id) } catch {}
+                      removeTask(id)
+                      setActiveTasks((prev) => prev.filter((t) => t !== id))
+                    }}
+                    title="End this task"
+                    className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
-                  running
-                </span>
-              </Link>
+              </div>
             ))}
           </div>
         )}
@@ -129,16 +142,29 @@ export default function Dashboard() {
               <History className="h-3.5 w-3.5 text-gray-400" />
               <h2 className="text-sm font-semibold text-gray-900">Recent Tasks</h2>
             </div>
-            <span className="text-xs text-gray-400">this browser</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">this browser</span>
+              <button
+                onClick={() => {
+                  clearAllTasks()
+                  setRecent([])
+                }}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="h-3 w-3" /> Clear all
+              </button>
+            </div>
           </div>
           <div className="divide-y divide-gray-50">
             {recent.map((node) => (
-              <Link
+              <div
                 key={node.taskId}
-                to={`/task/${node.taskId}`}
                 className="flex items-start justify-between gap-4 px-6 py-3.5 transition hover:bg-gray-50"
               >
-                <div className="min-w-0 flex-1">
+                <Link
+                  to={`/task/${node.taskId}`}
+                  className="min-w-0 flex-1"
+                >
                   <p className="truncate text-sm text-gray-800">{node.prompt}</p>
                   <div className="mt-1 flex items-center gap-2.5">
                     <code className="font-mono text-[11px] text-gray-400">{node.taskId}</code>
@@ -148,14 +174,25 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
-                </div>
+                </Link>
                 <div className="flex flex-shrink-0 items-center gap-2.5">
                   {activeSet.has(node.taskId) && (
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
                   )}
                   <span className="text-[11px] text-gray-400">{relativeTime(node.createdAt)}</span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      removeTask(node.taskId)
+                      setRecent((prev) => prev.filter((n) => n.taskId !== node.taskId))
+                    }}
+                    title="Remove from history"
+                    className="rounded-lg p-1 text-gray-300 transition hover:bg-red-50 hover:text-red-500"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
