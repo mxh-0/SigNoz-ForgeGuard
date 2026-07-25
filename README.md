@@ -1,7 +1,5 @@
 # SigNoz ForgeGuard — n8nForge Observer
 
-**Agents of SigNoz 2026 — Track 1: AI & Agent Observability**
-
 A hybrid multi-agent system with full pipeline visibility and self-healing. Submit a task, watch four specialized agents execute it in sequence, and let the SRE Copilot detect failures and attempt automatic recovery before escalating to manual mode.
 
 Built for the hackathon goal: make agent workflows **observable**, **recoverable**, and **explainable** — not a black box of blind retries.
