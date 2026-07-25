@@ -28,7 +28,7 @@ async def coordinate(prompt: str, fix_hint: str | None = None) -> list[dict]:
     if fix_hint:
         user_msg += f"\n\nPrevious attempt failed. Copilot says: {fix_hint}"
 
-    resp = await llm_call(system=SYSTEM, user=user_msg, temperature=0.1)
+    resp = await llm_call(system=SYSTEM, user=user_msg, temperature=0.1, caller="coordinator")
 
     # Parse
     match = re.search(r"\[.*\]", resp.text, re.DOTALL)

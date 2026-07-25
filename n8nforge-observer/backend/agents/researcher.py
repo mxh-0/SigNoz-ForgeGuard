@@ -16,4 +16,4 @@ async def research(prompt: str, plan_description: str, fix_hint: str | None = No
     if fix_hint:
         user_msg += f"\n\nCopilot fix instruction: {fix_hint}\nImprove your research based on this feedback."
 
-    return await llm_call(system=SYSTEM, user=user_msg, temperature=0.4)
+    return await llm_call(system=SYSTEM, user=user_msg, temperature=0.4, caller="researcher")

@@ -1,6 +1,8 @@
-// In dev mode with Vite proxy: /api → localhost:8000
-// In production or when proxy isn't available: hit the backend directly
-const BASE = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+// API base URL resolution:
+// - Dev mode (Vite proxy): /api -> localhost:8000
+// - Vercel / standalone: set VITE_API_URL to your backend (e.g. http://your-ip:8000)
+// - Docker (nginx): /api proxied to backend container
+const BASE = import.meta.env.VITE_API_URL || '/api'
 
 export interface StepResult {
   name: string
@@ -19,6 +21,13 @@ export interface FixEntry {
   timestamp: string
 }
 
+export interface AnomalyEntry {
+  step: string
+  kind: string
+  detail: string
+  timestamp: string
+}
+
 export interface TaskResult {
   task_id: string
   status: string  // running | success | manual_mode | error
@@ -28,6 +37,7 @@ export interface TaskResult {
   total_tokens: number
   retry_count: number
   fix_history: FixEntry[]
+  anomalies: AnomalyEntry[]
   mode: string
   error: string
 }
@@ -88,4 +98,47 @@ export async function cancelTask(taskId: string) {
   const res = await fetch(`${BASE}/tasks/${taskId}/cancel`, { method: 'POST' })
   if (!res.ok) throw new Error(`Failed to cancel: ${res.status}`)
   return res.json()
+}
+
+
+// ── SigNoz Integration ───────────────────────────────────────────────────────
+
+export interface SigNozMetrics {
+  signoz_available: boolean
+  llm: {
+    avg_latency_ms: number
+    p95_latency_ms: number
+    error_rate: number
+    is_degraded: boolean
+  }
+  healing: {
+    total_attempts: number
+    success_count: number
+    success_rate: number
+  }
+  steps: {
+    research: { avg_latency_ms: number; error_rate: number; is_degraded: boolean }
+    code: { avg_latency_ms: number; error_rate: number; is_degraded: boolean }
+    review: { avg_latency_ms: number; error_rate: number; is_degraded: boolean }
+  }
+}
+
+export async function getSigNozHealth(): Promise<{ available: boolean; endpoint: string }> {
+  try {
+    const res = await fetch(`${BASE}/signoz/health`)
+    if (!res.ok) return { available: false, endpoint: '' }
+    return res.json()
+  } catch {
+    return { available: false, endpoint: '' }
+  }
+}
+
+export async function getSigNozMetrics(): Promise<SigNozMetrics | null> {
+  try {
+    const res = await fetch(`${BASE}/signoz/metrics`)
+    if (!res.ok) return null
+    return res.json()
+  } catch {
+    return null
+  }
 }

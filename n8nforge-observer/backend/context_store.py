@@ -29,6 +29,14 @@ class FixAttempt(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
+class AnomalyEvent(BaseModel):
+    """A single anomaly caught by the SRE Copilot. Surfaced to the frontend."""
+    step: str
+    kind: str      # low_score | weak_score | reviewer_critique | placeholder | loop | ...
+    detail: str
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
 class TaskContext(BaseModel):
     task_id: str
     prompt: str
@@ -36,6 +44,7 @@ class TaskContext(BaseModel):
     steps: list[StepInfo] = Field(default_factory=list)
     retry_count: int = 0
     fix_history: list[FixAttempt] = Field(default_factory=list)
+    anomalies: list[AnomalyEvent] = Field(default_factory=list)
     final_output: str = ""
     total_tokens: int = 0
     status: str = "running"  # running | success | manual_mode | error

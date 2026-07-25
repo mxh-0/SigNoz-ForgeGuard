@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/followupcomposer.tsx","./src/components/markdown.tsx","./src/lib/api.ts","./src/lib/thread.ts","./src/pages/analytics.tsx","./src/pages/contextinspector.tsx","./src/pages/dashboard.tsx","./src/pages/landing.tsx","./src/pages/newtask.tsx","./src/pages/taskview.tsx"],"version":"5.9.3"}

@@ -51,7 +51,7 @@ async def review(prompt: str, artifact: str) -> ReviewResult:
         "Score using the rubric. Return only JSON."
     )
 
-    resp = await llm_call(system=RUBRIC, user=user_msg, temperature=0.0)
+    resp = await llm_call(system=RUBRIC, user=user_msg, temperature=0.0, caller="reviewer")
 
     # Parse
     match = re.search(r"\{.*\}", resp.text, re.DOTALL)

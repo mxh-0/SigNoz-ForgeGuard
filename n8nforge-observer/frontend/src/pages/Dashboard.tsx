@@ -1,108 +1,180 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, XCircle, Clock, Zap, ArrowRight } from 'lucide-react'
+import { CheckCircle2, XCircle, Clock, Zap, ArrowRight, History, GitBranch } from 'lucide-react'
 import { checkHealth, getActiveContexts } from '../lib/api'
+import { getRecentTasks, type ThreadNode } from '../lib/thread'
+
+function relativeTime(ts: number): string {
+  const secs = Math.floor((Date.now() - ts) / 1000)
+  if (secs < 60) return 'just now'
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`
+  return `${Math.floor(secs / 86400)}d ago`
+}
 
 export default function Dashboard() {
   const [healthy, setHealthy] = useState<boolean | null>(null)
   const [activeTasks, setActiveTasks] = useState<string[]>([])
-  const [stats, setStats] = useState({ total: 0, success: 0, healed: 0, manual: 0 })
+  const [recent, setRecent] = useState<ThreadNode[]>([])
 
   useEffect(() => {
     const check = async () => {
       setHealthy(await checkHealth())
       const ctx = await getActiveContexts()
       setActiveTasks(ctx.active_tasks)
+      setRecent(getRecentTasks(8))
     }
     check()
     const i = setInterval(check, 5000)
     return () => clearInterval(i)
   }, [])
 
+  const activeSet = useMemo(() => new Set(activeTasks), [activeTasks])
+
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-7 p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Pipeline overview and system health</p>
+          <p className="mt-1 text-sm text-gray-500">Pipeline overview and system health</p>
         </div>
-        <Link to="/new" className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
-          <Zap className="w-4 h-4" /> New Task
+        <Link
+          to="/new"
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+        >
+          <Zap className="h-4 w-4" /> New Task
         </Link>
       </div>
 
       {/* Status cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-500">Backend</span>
-            {healthy === null ? <Clock className="w-4 h-4 text-gray-400" /> :
-             healthy ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> :
-             <XCircle className="w-4 h-4 text-red-500" />}
+            {healthy === null ? (
+              <Clock className="h-4 w-4 text-gray-400" />
+            ) : healthy ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <XCircle className="h-4 w-4 text-red-500" />
+            )}
           </div>
-          <p className="text-2xl font-bold mt-2 text-gray-900">
+          <p className="mt-2 text-2xl font-bold text-gray-900">
             {healthy === null ? '...' : healthy ? 'Online' : 'Offline'}
           </p>
+          {healthy === false && <p className="mt-1 text-xs text-red-500">Start it on port 8000</p>}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
           <span className="text-sm font-medium text-gray-500">Active Tasks</span>
-          <p className="text-2xl font-bold mt-2 text-gray-900">{activeTasks.length}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">{activeTasks.length}</p>
+          <p className="mt-1 text-xs text-gray-400">In the pipeline now</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
           <span className="text-sm font-medium text-gray-500">Copilot Mode</span>
-          <p className="text-2xl font-bold mt-2 text-gray-900">Automatic</p>
-          <p className="text-xs text-gray-400 mt-1">2-strike cap</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">Automatic</p>
+          <p className="mt-1 text-xs text-gray-400">2-strike cap</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
           <span className="text-sm font-medium text-gray-500">Context Store</span>
-          <p className="text-2xl font-bold mt-2 text-gray-900">RAM</p>
-          <p className="text-xs text-gray-400 mt-1">Ephemeral, per-task</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">RAM</p>
+          <p className="mt-1 text-xs text-gray-400">Ephemeral, per-task</p>
         </div>
       </div>
 
       {/* Active tasks */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 text-sm">Active Pipeline Tasks</h2>
+      <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <h2 className="text-sm font-semibold text-gray-900">Active Pipeline Tasks</h2>
           <span className="text-xs text-gray-400">{activeTasks.length} running</span>
         </div>
         {activeTasks.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="text-sm text-gray-500">No active tasks. Submit one to see the pipeline in action.</p>
-            <Link to="/new" className="mt-3 inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800">
-              Submit a task <ArrowRight className="w-3 h-3" />
+            <Link
+              to="/new"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 transition hover:text-indigo-800"
+            >
+              Submit a task <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {activeTasks.map(id => (
-              <Link key={id} to={`/task/${id}`} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+            {activeTasks.map((id) => (
+              <Link
+                key={id}
+                to={`/task/${id}`}
+                className="flex items-center justify-between px-6 py-4 transition hover:bg-gray-50"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                  <code className="text-sm font-mono text-gray-700">{id}</code>
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+                  <code className="font-mono text-sm text-gray-700">{id}</code>
                 </div>
-                <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">running</span>
+                <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                  running
+                </span>
               </Link>
             ))}
           </div>
         )}
       </div>
 
-      {/* Architecture */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 text-sm mb-4">Pipeline Architecture</h2>
-        <div className="flex items-center gap-3 overflow-x-auto py-2">
-          {['Task Intake', 'Coordinator', 'Researcher', 'Coder', 'Reviewer', 'SRE Copilot', 'Output'].map((s, i, arr) => (
-            <div key={s} className="flex items-center gap-3 flex-shrink-0">
-              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-xs font-medium text-gray-700">{s}</span>
-              </div>
-              {i < arr.length - 1 && <ArrowRight className="w-3 h-3 text-gray-300" />}
+      {/* Recent history (client-side) */}
+      {recent.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <History className="h-3.5 w-3.5 text-gray-400" />
+              <h2 className="text-sm font-semibold text-gray-900">Recent Tasks</h2>
             </div>
-          ))}
+            <span className="text-xs text-gray-400">this browser</span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {recent.map((node) => (
+              <Link
+                key={node.taskId}
+                to={`/task/${node.taskId}`}
+                className="flex items-start justify-between gap-4 px-6 py-3.5 transition hover:bg-gray-50"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-gray-800">{node.prompt}</p>
+                  <div className="mt-1 flex items-center gap-2.5">
+                    <code className="font-mono text-[11px] text-gray-400">{node.taskId}</code>
+                    {node.parentId && (
+                      <span className="flex items-center gap-1 text-[11px] text-indigo-500">
+                        <GitBranch className="h-2.5 w-2.5" /> revision
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-2.5">
+                  {activeSet.has(node.taskId) && (
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+                  )}
+                  <span className="text-[11px] text-gray-400">{relativeTime(node.createdAt)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Architecture */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-sm font-semibold text-gray-900">Pipeline Architecture</h2>
+        <div className="flex items-center gap-3 overflow-x-auto py-2">
+          {['Task Intake', 'Coordinator', 'Researcher', 'Coder', 'Reviewer', 'SRE Copilot', 'Output'].map(
+            (s, i, arr) => (
+              <div key={s} className="flex flex-shrink-0 items-center gap-3">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <span className="text-xs font-medium text-gray-700">{s}</span>
+                </div>
+                {i < arr.length - 1 && <ArrowRight className="h-3 w-3 text-gray-300" />}
+              </div>
+            ),
+          )}
         </div>
       </div>
     </div>

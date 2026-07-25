@@ -1,0 +1,71 @@
+# n8nForge Observer — Full Stack with SigNoz
+# SigNoz is bundled as a single standalone container (all-in-one).
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f backend
+#   docker compose down
+#
+# Access:
+#   Frontend:     http://localhost:5173
+#   Backend API:  http://localhost:8000
+#   SigNoz UI:    http://localhost:3301
+
+services:
+  # ─── SigNoz (all-in-one: ClickHouse + OTel Collector + UI) ─────────────────
+  signoz:
+    image: signoz/signoz-standalone:latest
+    container_name: signoz
+    privileged: true
+    ports:
+      - "3301:8080"   # SigNoz UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP (backend sends traces/metrics here)
+    volumes:
+      - signoz-clickhouse:/var/lib/clickhouse
+      - signoz-data:/var/lib/signoz
+    restart: unless-stopped
+
+  # ─── Backend (FastAPI multi-agent system) ───────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: n8nforge-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=https://api.groq.com/openai/v1
+      - LLM_MODEL=llama-3.3-70b-versatile
+      - LLM_TEMPERATURE=0.2
+      - BACKEND_HOST=0.0.0.0
+      - BACKEND_PORT=8000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz:4318
+      - SIGNOZ_QUERY_URL=http://signoz:8080
+      - SERVICE_NAME=n8nforge-observer
+      - DEPLOYMENT_ENV=docker
+    depends_on:
+      - signoz
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Frontend (React served by nginx) ───────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: n8nforge-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  signoz-clickhouse:
+  signoz-data:

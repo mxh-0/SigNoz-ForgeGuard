@@ -29,4 +29,4 @@ async def produce(
         )
 
     temp = 0.2 if fix_hint else 0.3
-    return await llm_call(system=SYSTEM, user=user_msg, temperature=temp)
+    return await llm_call(system=SYSTEM, user=user_msg, temperature=temp, caller="coder")

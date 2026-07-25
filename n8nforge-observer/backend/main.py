@@ -26,6 +26,13 @@ from backend.context_store import store, new_task_id, StepInfo, TaskContext
 from backend.agents import coordinator, researcher, coder, reviewer
 from backend.copilot import evaluate, mark_fix_result
 
+# OpenTelemetry + SigNoz (core integration)
+from backend.instrumentation import (
+    setup_telemetry, start_agent_span, agent_step_latency,
+    tasks_submitted, tasks_completed, tasks_failed,
+)
+setup_telemetry()
+
 app = FastAPI(title="n8nForge Observer", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -38,6 +45,16 @@ def _emit(task_id: str, event: str, data: dict):
     q = _event_queues.get(task_id)
     if q:
         q.put_nowait({"event": event, "data": json.dumps(data)})
+
+
+def _emit_anomaly(task_id: str, step: str, decision):
+    """Surface a Copilot anomaly to the live pipeline in the frontend."""
+    if decision.action in ("retry", "manual") and decision.reason:
+        _emit(task_id, "status", {
+            "step": "anomaly",
+            "status": "anomaly",
+            "message": f"ANOMALY DETECTED — {decision.reason}",
+        })
 
 
 # ── Models ────────────────────────────────────────────────────────────────────
@@ -55,6 +72,7 @@ class TaskResult(BaseModel):
     total_tokens: int = 0
     retry_count: int = 0
     fix_history: list[dict] = []
+    anomalies: list[dict] = []
     mode: str = "automatic"
     error: str = ""
 
@@ -72,6 +90,9 @@ async def submit_task(body: TaskSubmit):
     task_id = new_task_id()
     await store.create(task_id, body.prompt)
     _event_queues[task_id] = asyncio.Queue()
+
+    # Record in SigNoz
+    tasks_submitted.add(1)
 
     # Run pipeline in background so the HTTP response returns instantly
     asyncio.create_task(_run_pipeline(task_id, body.prompt))
@@ -141,6 +162,65 @@ async def list_contexts():
     return {"active_tasks": active, "count": len(active)}
 
 
+@app.get("/signoz/health")
+async def signoz_health():
+    """Check if SigNoz is available and return connection status."""
+    from backend.signoz_client import signoz
+    available = await signoz.is_available()
+    return {
+        "available": available,
+        "endpoint": settings.signoz_query_url,
+        "service_name": settings.service_name,
+    }
+
+
+@app.get("/signoz/metrics")
+async def signoz_metrics():
+    """
+    Get aggregated metrics from SigNoz for the frontend dashboard.
+    Shows: LLM health, healing stats, step performance.
+    """
+    from backend.signoz_client import signoz
+
+    llm_health = await signoz.get_llm_health()
+    healing = await signoz.get_healing_history()
+    research_health = await signoz.get_step_health("research")
+    code_health = await signoz.get_step_health("code")
+    review_health = await signoz.get_step_health("review")
+
+    return {
+        "signoz_available": await signoz.is_available(),
+        "llm": {
+            "avg_latency_ms": llm_health.avg_latency_ms if llm_health else 0,
+            "p95_latency_ms": llm_health.p95_latency_ms if llm_health else 0,
+            "error_rate": llm_health.error_rate if llm_health else 0,
+            "is_degraded": llm_health.is_degraded if llm_health else False,
+        },
+        "healing": {
+            "total_attempts": healing.total_attempts if healing else 0,
+            "success_count": healing.success_count if healing else 0,
+            "success_rate": healing.success_rate if healing else 0,
+        },
+        "steps": {
+            "research": {
+                "avg_latency_ms": research_health.avg_latency_ms if research_health else 0,
+                "error_rate": research_health.error_rate if research_health else 0,
+                "is_degraded": research_health.is_degraded if research_health else False,
+            },
+            "code": {
+                "avg_latency_ms": code_health.avg_latency_ms if code_health else 0,
+                "error_rate": code_health.error_rate if code_health else 0,
+                "is_degraded": code_health.is_degraded if code_health else False,
+            },
+            "review": {
+                "avg_latency_ms": review_health.avg_latency_ms if review_health else 0,
+                "error_rate": review_health.error_rate if review_health else 0,
+                "is_degraded": review_health.is_degraded if review_health else False,
+            },
+        },
+    }
+
+
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 
 async def _run_pipeline(task_id: str, prompt: str):
@@ -191,6 +271,7 @@ async def _run_pipeline(task_id: str, prompt: str):
 
         # Copilot check on review score
         decision = await evaluate(task_id, "review", score=review_result.score)
+        _emit_anomaly(task_id, "review", decision)
 
         if decision.action == "retry":
             # Low score — retry the code step with feedback
@@ -217,6 +298,7 @@ async def _run_pipeline(task_id: str, prompt: str):
                 await mark_fix_result(task_id, decision.attempt, "fail")
                 # Check again
                 decision2 = await evaluate(task_id, "review", score=review_result.score)
+                _emit_anomaly(task_id, "review", decision2)
                 if decision2.action == "manual":
                     await _go_manual(task_id, decision2.reason, code_output)
                     return
@@ -229,12 +311,14 @@ async def _run_pipeline(task_id: str, prompt: str):
         ctx = await store.get(task_id)
         total_tokens = sum(s.tokens for s in ctx.steps) if ctx else 0
         await store.update(task_id, status="success", final_output=code_output, total_tokens=total_tokens)
+        tasks_completed.add(1)
 
         _emit(task_id, "complete", {"status": "success", "output_length": len(code_output)})
 
     except Exception as exc:
         tb = traceback.format_exc()
         await store.update(task_id, status="error", error=str(exc))
+        tasks_failed.add(1)
         _emit(task_id, "error", {"error": str(exc), "traceback": tb[:500]})
     finally:
         # Cleanup SSE queue after a delay (let clients read final events)
@@ -288,6 +372,7 @@ async def _run_step_with_healing(
 
             # Copilot check
             decision = await evaluate(task_id, step_name)
+            _emit_anomaly(task_id, step_name, decision)
             if decision.action == "continue":
                 if attempt > 0:
                     await mark_fix_result(task_id, decision.attempt or attempt, "success")
@@ -307,6 +392,7 @@ async def _run_step_with_healing(
             _emit(task_id, "status", {"step": step_name, "status": "failed", "message": error_msg[:150]})
 
             decision = await evaluate(task_id, step_name, error=error_msg)
+            _emit_anomaly(task_id, step_name, decision)
             if decision.action == "retry":
                 fix_hint = decision.fix_hint
                 _emit(task_id, "status", {"step": "copilot", "status": "healing",
@@ -324,6 +410,7 @@ async def _run_step_with_healing(
 async def _go_manual(task_id: str, reason: str, partial_output: str):
     """Switch to manual mode."""
     await store.update(task_id, mode="manual", status="manual_mode", final_output=partial_output)
+    tasks_failed.add(1)
     _emit(task_id, "complete", {
         "status": "manual_mode",
         "reason": reason,
@@ -341,6 +428,7 @@ def _ctx_to_result(ctx: TaskContext) -> dict[str, Any]:
         total_tokens=ctx.total_tokens,
         retry_count=ctx.retry_count,
         fix_history=[f.model_dump() for f in ctx.fix_history],
+        anomalies=[a.model_dump() for a in ctx.anomalies],
         mode=ctx.mode,
         error=ctx.error,
     ).model_dump()
