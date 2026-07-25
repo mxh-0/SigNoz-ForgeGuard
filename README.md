@@ -12,16 +12,12 @@ Built for the hackathon goal: make agent workflows **observable**, **recoverable
 
 - [Overview](#overview)
 - [System Diagrams](#system-diagrams)
-- [Architecture](#architecture)
-- [Repository Structure](#repository-structure)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
 - [Agent Pipeline](#agent-pipeline)
 - [SRE Copilot & Self-Healing](#sre-copilot--self-healing)
-- [Frontend](#frontend)
-- [Roadmap](#roadmap)
-- [Documentation](#documentation)
+
 
 ---
 
@@ -98,39 +94,6 @@ flowchart TB
     style Intel fill:#fce7f3,stroke:#ec4899
     style LLM fill:#f3f4f6,stroke:#6b7280
     style Obs fill:#f9fafb,stroke:#9ca3af,stroke-dasharray:5 5
-```
-
-### End-to-End Data Flow
-
-How a single task moves through the system from submission to completion.
-
-```mermaid
-flowchart LR
-    A(["📝 User submits prompt"]) --> B["FastAPI creates task_id<br/>+ RAM context entry"]
-    B --> C["Coordinator decomposes<br/>into 3-step plan"]
-    C --> D["Researcher gathers info"]
-    D --> E{"Copilot<br/>check"}
-    E -->|"OK"| F["Coder produces output"]
-    E -->|"Anomaly + retries left"| D2["Retry with fix hint"]
-    D2 --> D
-    E -->|"Cap reached"| M(["🔴 Manual Mode"])
-    F --> G{"Copilot<br/>check"}
-    G -->|"OK"| H["Reviewer scores output<br/>semantic_score 0–1"]
-    G -->|"Anomaly + retries left"| F2["Retry with fix hint"]
-    F2 --> F
-    G -->|"Cap reached"| M
-    H --> I{"Score ≥ 0.6?"}
-    I -->|"Yes"| J(["✅ Success<br/>final_output returned"])
-    I -->|"No"| K["Copilot retries Coder"]
-    K --> F
-    J --> L["SSE complete event<br/>→ React UI"]
-    M --> N["SSE manual_mode event<br/>→ developer intervention"]
-
-    style A fill:#dbeafe,stroke:#3b82f6
-    style J fill:#d1fae5,stroke:#059669
-    style M fill:#fee2e2,stroke:#dc2626
-    style L fill:#ede9fe,stroke:#7c3aed
-    style N fill:#fef3c7,stroke:#d97706
 ```
 
 ### Request Lifecycle (Sequence)
@@ -219,54 +182,6 @@ stateDiagram-v2
         retry_count ≥ 2
         No further auto-retries
     end note
-```
-
----
-
-## Architecture
-
-### Layer Responsibilities
-
-| Layer | Technology | Status |
-|-------|-----------|--------|
-| User interface | React + Vite + Tailwind | ✅ Implemented |
-| API & orchestration | FastAPI + asyncio | ✅ Implemented |
-| Agent execution | Async LLM agents (Groq) | ✅ Implemented |
-| Quality evaluation | LLM-as-Judge (Reviewer) | ✅ Implemented |
-| Self-healing | SRE Copilot + RAM store | ✅ Implemented |
-| Instrumentation | OpenTelemetry → SigNoz | 🔜 Planned |
-| External orchestration | n8n workflows | 🔜 Planned |
-
----
-
-## Repository Structure
-
-```
-signoz/                          # Repository root
-├── README.md                    # This file
-├── n8nforge-observer/           # Main application
-│   ├── backend/
-│   │   ├── main.py              # FastAPI app, pipeline orchestration, SSE streaming
-│   │   ├── config.py            # Environment settings (LLM, Copilot thresholds)
-│   │   ├── llm.py               # Async OpenAI-compatible LLM client (Groq)
-│   │   ├── context_store.py     # In-memory RAM context store
-│   │   ├── copilot.py           # SRE Copilot — anomaly detection & healing
-│   │   └── agents/
-│   │       ├── coordinator.py   # Task decomposition
-│   │       ├── researcher.py    # Information gathering
-│   │       ├── coder.py         # Output production
-│   │       └── reviewer.py      # LLM-as-Judge scoring
-│   ├── frontend/                # React dashboard (v2.0)
-│   │   ├── src/
-│   │   │   ├── pages/           # Dashboard, NewTask, TaskView, Analytics, ContextInspector
-│   │   │   └── lib/api.ts       # Backend API client + SSE subscription
-│   │   └── vite.config.ts       # Dev proxy: /api → localhost:8000
-│   └── requirements.txt
-└── sig/                         # Design & planning docs
-    ├── arch.md                  # Full architecture specification
-    ├── spec.md                  # Functional requirements
-    ├── context.md               # RAM context store design
-    └── Plan.md                  # Build & demo plan
 ```
 
 ---
@@ -453,52 +368,6 @@ See the full [Self-Healing State Machine](#self-healing-state-machine) diagram i
 
 The **2-strike cap** is intentional: it prevents the healing mechanism itself from becoming an infinite retry loop — the exact failure mode this project is designed to solve.
 
----
-
-## Frontend
-
-The React UI (`n8nforge-observer/frontend/`) provides:
-
-| Page | Route | Purpose |
-|------|-------|---------|
-| Dashboard | `/` | Backend health, active tasks, quick actions |
-| New Task | `/new` | Submit prompts to the pipeline |
-| Task View | `/task/:taskId` | Live SSE progress, step outputs, final result |
-| Analytics | `/analytics` | Metrics the system tracks (tokens, latency, healing) |
-| Context Inspector | `/context` | Live RAM context snapshots per active task |
-
-**Stack:** React 18, TypeScript, Vite, Tailwind CSS, React Router, Lucide icons.
 
 ---
 
-## Roadmap
-
-Items from the design spec (`sig/`) not yet implemented in code:
-
-- [ ] **OpenTelemetry instrumentation** — spans around every agent/tool call with token counts, latency, and semantic scores exported via OTLP
-- [ ] **SigNoz integration** — trace waterfalls, dashboards (MTTR, fix-success rate, token cost)
-- [ ] **SigNoz MCP Copilot** — query traces/metrics from SigNoz for richer anomaly detection (loop patterns, latency spikes)
-- [ ] **n8n workflow orchestration** — webhook-driven intake and step re-trigger for manual fix mode
-- [ ] **Docker Compose** — one-command local deployment with SigNoz
-- [ ] **Persistent task history** — cross-session analytics in the frontend
-
-See [`sig/Plan.md`](sig/Plan.md) for the full phased build plan and demo script.
-
----
-
-## Documentation
-
-Detailed design documents live in [`sig/`](sig/):
-
-| Document | Contents |
-|----------|----------|
-| [`arch.md`](sig/arch.md) | Full architecture, component design, data flow |
-| [`spec.md`](sig/spec.md) | Functional/non-functional requirements, acceptance criteria |
-| [`context.md`](sig/context.md) | RAM context store data model and lifecycle |
-| [`Plan.md`](sig/Plan.md) | Build phases, demo script, risk mitigations |
-
----
-
-## License
-
-Hackathon submission for **Agents of SigNoz 2026**.
