@@ -26,7 +26,7 @@ function Layout() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
             <Zap className="h-4 w-4 text-white" />
           </div>
-          <span className="text-sm font-bold text-gray-900">n8nForge Observer</span>
+          <span className="text-sm font-bold text-gray-900">SignozForge Observer</span>
         </Link>
 
         <nav className="flex-1 space-y-1 p-3">

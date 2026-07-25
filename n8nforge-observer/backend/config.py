@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # SigNoz / OpenTelemetry
     otel_exporter_otlp_endpoint: str = "http://localhost:4318"
     signoz_query_url: str = "http://localhost:3301"  # SigNoz Query Service (mapped port)
-    service_name: str = "n8nforge-observer"
+    service_name: str = "signozforge-observer"
 
 
 settings = Settings()

@@ -1,4 +1,4 @@
-# n8nForge Observer — Deployment Guide
+# SignozForge Observer — Deployment Guide
 
 ## Quick Start (Local Development)
 
@@ -9,7 +9,7 @@
 
 ### 1. Backend
 ```bash
-cd n8nforge-observer
+cd signozforge-observer
 
 # Create virtual environment
 python -m venv .venv
@@ -107,7 +107,7 @@ docker compose up -d --build
 When running with the full Docker Compose:
 
 1. **View Traces**: Open http://localhost:3301 → Traces
-2. **Service Name**: `n8nforge-observer`
+2. **Service Name**: `signozforge-observer`
 3. **What's Captured**:
    - All HTTP requests to the API
    - LLM calls to Groq

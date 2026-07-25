@@ -7,7 +7,7 @@
  * what was asked. No backend or workflow change.
  */
 
-const KEY = 'n8nforge.threads.v1'
+const KEY = 'signozforge.threads.v1'
 
 export interface ThreadNode {
   taskId: string

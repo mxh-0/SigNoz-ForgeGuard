@@ -45,7 +45,7 @@ def setup_telemetry() -> bool:
 
     try:
         resource = Resource(attributes={
-            SERVICE_NAME: os.getenv("SERVICE_NAME", "n8nforge-observer"),
+            SERVICE_NAME: os.getenv("SERVICE_NAME", "signozforge-observer"),
             "deployment.environment": os.getenv("DEPLOYMENT_ENV", "development"),
             "service.version": "2.0.0",
         })
@@ -86,12 +86,12 @@ def setup_telemetry() -> bool:
 
 def get_tracer() -> trace.Tracer:
     """Get the main application tracer."""
-    return trace.get_tracer("n8nforge.observer", "2.0.0")
+    return trace.get_tracer("signozforge.observer", "2.0.0")
 
 
 def get_meter() -> metrics.Meter:
     """Get the main application meter for custom metrics."""
-    return metrics.get_meter("n8nforge.observer", "2.0.0")
+    return metrics.get_meter("signozforge.observer", "2.0.0")
 
 
 # ── Custom Metrics ────────────────────────────────────────────────────────────
@@ -100,68 +100,68 @@ _meter = get_meter()
 
 # Counters
 tasks_submitted = _meter.create_counter(
-    "n8nforge.tasks.submitted",
+    "signozforge.tasks.submitted",
     description="Total tasks submitted by users",
     unit="1",
 )
 
 tasks_completed = _meter.create_counter(
-    "n8nforge.tasks.completed",
+    "signozforge.tasks.completed",
     description="Tasks that completed successfully",
     unit="1",
 )
 
 tasks_failed = _meter.create_counter(
-    "n8nforge.tasks.failed",
+    "signozforge.tasks.failed",
     description="Tasks that ended in error or manual mode",
     unit="1",
 )
 
 anomalies_detected = _meter.create_counter(
-    "n8nforge.copilot.anomalies_detected",
+    "signozforge.copilot.anomalies_detected",
     description="Anomalies detected by the SRE Copilot",
     unit="1",
 )
 
 healing_attempts = _meter.create_counter(
-    "n8nforge.copilot.healing_attempts",
+    "signozforge.copilot.healing_attempts",
     description="Healing attempts triggered by the Copilot",
     unit="1",
 )
 
 healing_successes = _meter.create_counter(
-    "n8nforge.copilot.healing_successes",
+    "signozforge.copilot.healing_successes",
     description="Healing attempts that resolved the issue",
     unit="1",
 )
 
 manual_mode_triggers = _meter.create_counter(
-    "n8nforge.copilot.manual_mode_triggers",
+    "signozforge.copilot.manual_mode_triggers",
     description="Times the Copilot gave up and switched to manual mode",
     unit="1",
 )
 
 llm_calls_total = _meter.create_counter(
-    "n8nforge.llm.calls_total",
+    "signozforge.llm.calls_total",
     description="Total LLM API calls",
     unit="1",
 )
 
 llm_errors_total = _meter.create_counter(
-    "n8nforge.llm.errors_total",
+    "signozforge.llm.errors_total",
     description="LLM API call errors (timeouts, rate limits, failures)",
     unit="1",
 )
 
 # Histograms
 llm_latency = _meter.create_histogram(
-    "n8nforge.llm.latency_ms",
+    "signozforge.llm.latency_ms",
     description="LLM call latency in milliseconds",
     unit="ms",
 )
 
 agent_step_latency = _meter.create_histogram(
-    "n8nforge.agent.step_latency_ms",
+    "signozforge.agent.step_latency_ms",
     description="Agent step execution latency",
     unit="ms",
 )

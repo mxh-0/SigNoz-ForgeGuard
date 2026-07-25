@@ -195,17 +195,17 @@ export default function Analytics() {
         <h2 className="font-semibold text-gray-900 text-sm mb-4">Custom Metrics (exported to SigNoz)</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { name: 'n8nforge.tasks.submitted', type: 'Counter', desc: 'Total tasks submitted' },
-            { name: 'n8nforge.tasks.completed', type: 'Counter', desc: 'Successful completions' },
-            { name: 'n8nforge.tasks.failed', type: 'Counter', desc: 'Errors + manual mode' },
-            { name: 'n8nforge.copilot.anomalies_detected', type: 'Counter', desc: 'Anomalies caught' },
-            { name: 'n8nforge.copilot.healing_attempts', type: 'Counter', desc: 'Fix attempts triggered' },
-            { name: 'n8nforge.copilot.healing_successes', type: 'Counter', desc: 'Fixes that worked' },
-            { name: 'n8nforge.copilot.manual_mode_triggers', type: 'Counter', desc: 'Manual mode switches' },
-            { name: 'n8nforge.llm.calls_total', type: 'Counter', desc: 'Total LLM API calls' },
-            { name: 'n8nforge.llm.errors_total', type: 'Counter', desc: 'LLM errors (timeout/rate limit)' },
-            { name: 'n8nforge.llm.latency_ms', type: 'Histogram', desc: 'LLM call latency distribution' },
-            { name: 'n8nforge.agent.step_latency_ms', type: 'Histogram', desc: 'Agent step duration' },
+            { name: 'signozforge.tasks.submitted', type: 'Counter', desc: 'Total tasks submitted' },
+            { name: 'signozforge.tasks.completed', type: 'Counter', desc: 'Successful completions' },
+            { name: 'signozforge.tasks.failed', type: 'Counter', desc: 'Errors + manual mode' },
+            { name: 'signozforge.copilot.anomalies_detected', type: 'Counter', desc: 'Anomalies caught' },
+            { name: 'signozforge.copilot.healing_attempts', type: 'Counter', desc: 'Fix attempts triggered' },
+            { name: 'signozforge.copilot.healing_successes', type: 'Counter', desc: 'Fixes that worked' },
+            { name: 'signozforge.copilot.manual_mode_triggers', type: 'Counter', desc: 'Manual mode switches' },
+            { name: 'signozforge.llm.calls_total', type: 'Counter', desc: 'Total LLM API calls' },
+            { name: 'signozforge.llm.errors_total', type: 'Counter', desc: 'LLM errors (timeout/rate limit)' },
+            { name: 'signozforge.llm.latency_ms', type: 'Histogram', desc: 'LLM call latency distribution' },
+            { name: 'signozforge.agent.step_latency_ms', type: 'Histogram', desc: 'Agent step duration' },
           ].map(m => (
             <div key={m.name} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
               <code className="text-[10px] font-mono text-gray-700 flex-1 truncate">{m.name}</code>

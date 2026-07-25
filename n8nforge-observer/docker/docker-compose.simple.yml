@@ -1,4 +1,4 @@
-# n8nForge Observer — Simple Docker Compose (no SigNoz)
+# SignozForge Observer — Simple Docker Compose (no SigNoz)
 # Use this for quick deployment without observability
 #
 # Usage:
@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: n8nforge-backend
+    container_name: signozforge-backend
     ports:
       - "8000:8000"
     environment:
@@ -36,7 +36,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: n8nforge-frontend
+    container_name: signozforge-frontend
     ports:
       - "5173:80"
     depends_on:

@@ -1,9 +1,9 @@
 {
-  "id": "n8nforge-observer-overview",
-  "uuid": "n8nforge-observer-overview",
-  "title": "n8nForge Observer - SRE Copilot Overview",
+  "id": "signozforge-observer-overview",
+  "uuid": "signozforge-observer-overview",
+  "title": "SignozForge Observer - SRE Copilot Overview",
   "description": "Multi-agent pipeline health, LLM performance, and Copilot healing metrics",
-  "tags": ["n8nforge", "copilot", "agents", "llm"],
+  "tags": ["signozforge", "copilot", "agents", "llm"],
   "layout": [
     {"i": "tasks_submitted", "x": 0, "y": 0, "w": 3, "h": 2},
     {"i": "tasks_completed", "x": 3, "y": 0, "w": 3, "h": 2},
@@ -32,7 +32,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum",
               "aggregateAttribute": {
-                "key": "n8nforge_tasks_submitted_total",
+                "key": "signozforge_tasks_submitted_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -59,7 +59,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum",
               "aggregateAttribute": {
-                "key": "n8nforge_tasks_completed_total",
+                "key": "signozforge_tasks_completed_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -86,7 +86,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum",
               "aggregateAttribute": {
-                "key": "n8nforge_tasks_failed_total",
+                "key": "signozforge_tasks_failed_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -113,7 +113,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum",
               "aggregateAttribute": {
-                "key": "n8nforge_copilot_anomalies_detected_total",
+                "key": "signozforge_copilot_anomalies_detected_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -140,7 +140,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "avg",
               "aggregateAttribute": {
-                "key": "n8nforge_llm_latency_ms",
+                "key": "signozforge_llm_latency_ms",
                 "dataType": "float64",
                 "type": "Histogram"
               },
@@ -167,7 +167,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "p95",
               "aggregateAttribute": {
-                "key": "n8nforge_llm_latency_ms",
+                "key": "signozforge_llm_latency_ms",
                 "dataType": "float64",
                 "type": "Histogram"
               },
@@ -193,7 +193,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum_rate",
               "aggregateAttribute": {
-                "key": "n8nforge_copilot_healing_attempts_total",
+                "key": "signozforge_copilot_healing_attempts_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -208,7 +208,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum_rate",
               "aggregateAttribute": {
-                "key": "n8nforge_copilot_healing_successes_total",
+                "key": "signozforge_copilot_healing_successes_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -236,7 +236,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum_rate",
               "aggregateAttribute": {
-                "key": "n8nforge_copilot_manual_mode_triggers_total",
+                "key": "signozforge_copilot_manual_mode_triggers_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -274,7 +274,7 @@
                   {
                     "key": {"key": "serviceName", "dataType": "string", "type": "tag", "isColumn": true},
                     "op": "=",
-                    "value": "n8nforge-observer"
+                    "value": "signozforge-observer"
                   },
                   {
                     "key": {"key": "name", "dataType": "string", "type": "tag", "isColumn": true},
@@ -305,7 +305,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum_rate",
               "aggregateAttribute": {
-                "key": "n8nforge_llm_calls_total_total",
+                "key": "signozforge_llm_calls_total_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true
@@ -333,7 +333,7 @@
               "dataSource": "metrics",
               "aggregateOperator": "sum_rate",
               "aggregateAttribute": {
-                "key": "n8nforge_llm_errors_total_total",
+                "key": "signozforge_llm_errors_total_total",
                 "dataType": "float64",
                 "type": "Sum",
                 "isMonotonic": true

@@ -1,5 +1,5 @@
 """
-n8nForge Observer — API
+SignozForge Observer — API
 Endpoints:
   POST /tasks          — submit a task (returns immediately with task_id)
   GET  /tasks/{id}     — get full task result (poll until complete)
@@ -33,7 +33,7 @@ from backend.instrumentation import (
 )
 setup_telemetry()
 
-app = FastAPI(title="n8nForge Observer", version="2.0.0")
+app = FastAPI(title="SignozForge Observer", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # SSE event queues per task
@@ -81,7 +81,7 @@ class TaskResult(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "n8nforge-observer"}
+    return {"status": "ok", "service": "signozforge-observer"}
 
 
 @app.post("/tasks")

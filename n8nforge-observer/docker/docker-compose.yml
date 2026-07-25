@@ -1,4 +1,4 @@
-# n8nForge Observer — Full Stack with SigNoz
+# SignozForge Observer — Full Stack with SigNoz
 # SigNoz is bundled as a single standalone container (all-in-one).
 #
 # Usage:
@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: n8nforge-backend
+    container_name: signozforge-backend
     ports:
       - "8000:8000"
     environment:
@@ -43,7 +43,7 @@ services:
       - BACKEND_PORT=8000
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz:4318
       - SIGNOZ_QUERY_URL=http://signoz:8080
-      - SERVICE_NAME=n8nforge-observer
+      - SERVICE_NAME=signozforge-observer
       - DEPLOYMENT_ENV=docker
     depends_on:
       - signoz
@@ -59,7 +59,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: n8nforge-frontend
+    container_name: signozforge-frontend
     ports:
       - "5173:80"
     depends_on:

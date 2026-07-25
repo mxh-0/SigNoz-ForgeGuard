@@ -29,7 +29,7 @@ export default function Landing() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
               <Zap className="h-4 w-4 text-white" />
             </div>
-            <span className="text-sm font-bold text-gray-900">n8nForge Observer</span>
+            <span className="text-sm font-bold text-gray-900">SignozForge Observer</span>
           </div>
           <nav className="flex items-center gap-1">
             <a
@@ -283,7 +283,7 @@ export default function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
           <div className="flex items-center gap-2">
             <Zap className="h-3.5 w-3.5 text-indigo-600" />
-            <span className="text-xs text-gray-500">n8nForge Observer — SRE Copilot v2.0</span>
+            <span className="text-xs text-gray-500">SignozForge Observer — SRE Copilot v2.0</span>
           </div>
           <div className="flex items-center gap-5 text-xs text-gray-400">
             <a

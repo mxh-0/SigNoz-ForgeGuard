@@ -215,7 +215,7 @@ class SigNozClient:
     async def get_healing_history(self, window_minutes: int = 60) -> HealingHistory | None:
         """
         Query SigNoz metrics for healing attempt history.
-        Uses custom counter n8nforge.copilot.healing_attempts/successes.
+        Uses custom counter signozforge.copilot.healing_attempts/successes.
         """
         if not await self.is_available():
             return None
@@ -234,7 +234,7 @@ class SigNozClient:
                         "dataSource": "metrics",
                         "aggregateOperator": "sum",
                         "aggregateAttribute": {
-                            "key": "n8nforge_copilot_healing_attempts_total",
+                            "key": "signozforge_copilot_healing_attempts_total",
                             "dataType": "float64",
                             "type": "Sum",
                             "isMonotonic": True,
@@ -246,7 +246,7 @@ class SigNozClient:
                         "dataSource": "metrics",
                         "aggregateOperator": "sum",
                         "aggregateAttribute": {
-                            "key": "n8nforge_copilot_healing_successes_total",
+                            "key": "signozforge_copilot_healing_successes_total",
                             "dataType": "float64",
                             "type": "Sum",
                             "isMonotonic": True,
