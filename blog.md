@@ -183,5 +183,3 @@ The thing I keep coming back to: **trustworthy AI agents aren't the ones that ne
 That's not a better prompt. That's an observable system — and for me, that meant building it on SigNoz from the first line of code, not bolting it on at the end.
 
 ---
-
-*Built for the SigNoz Hackathon 2025. If you want to dig into the anomaly detectors, the healing state machine, or how the Copilot's SigNoz queries are structured — happy to go deeper in the comments.*
