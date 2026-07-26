@@ -1,0 +1,28 @@
+apiVersion: v1alpha1
+kind: Installation
+metadata:
+  name: signoz
+spec:
+  deployment:
+    flavor: compose
+    mode: docker
+    components:
+      signoz:
+        image: signoz/signoz:latest
+      ingester:
+        image: signoz/signoz-otel-collector:latest
+      telemetrystore:
+        image: clickhouse/clickhouse-server:25.5.6
+      telemetrykeeper:
+        image: clickhouse/clickhouse-keeper:25.5.6
+      metastore:
+        image: postgres:16
+  mcp:
+    spec:
+      enabled: true
+      image: signoz/signoz-mcp-server:latest
+      port: 8000
+status:
+  phase: deployed
+  foundryVersion: v0.33.0
+  lastCastAt: "2025-07-25T18:30:00Z"

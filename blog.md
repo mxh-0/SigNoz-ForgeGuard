@@ -13,9 +13,6 @@ Then I actually read it.
 
 It hadn't fixed anything. It had described the shape of a fix, in the confident voice of something that had already done the work. That gap — between sounding done and being done — is the entire reason I spent the last stretch of the hackathon building **SignozForge Observer**.
 
-![SignozForge Observer landing page](blog-images/01-landing-hero.png)
-*The pitch, in one line: AI agents that catch their own bad output.*
-
 ---
 
 ### The blind spot I kept running into
@@ -43,9 +40,6 @@ The pipeline itself is simple on purpose:
 
 The part that isn't standard is what sits above all four: the **SRE Copilot**. Instead of trusting a single quality score, it runs **seven independent anomaly detectors** against the actual content of every step — hedging language, placeholder text, code-to-prose ratio, topic drift, repeated output across retries. A 0.79, even a 0.82, doesn't get a free pass just because it's a number above a line.
 
-![Four agents, one supervisor, and the healing path](blog-images/02-four-agents-healing-path.png)
-*The healing path is a strict two-strike policy — reword, then rethink, then hand it back to a human.*
-
 When the Copilot catches something, it doesn't just reject it — it tries to fix it:
 
 1. **Reword** — the specific failure gets written back into the brief and the step reruns with that context attached
@@ -57,12 +51,6 @@ When the Copilot catches something, it doesn't just reject it — it tries to fi
 ### What a clean run actually looks like
 
 Not every task needs saving. Here's one that just worked: *"Write unit tests for a user authentication module in TypeScript."*
-
-![Clean task run at 91% quality](blog-images/04-clean-run-task.png)
-*All four stages green. Quality 91%. Nothing for the Copilot to do here.*
-
-![Activity log for the clean run](blog-images/05-clean-run-activity-log.png)
-*Research complete, code complete, review — score 0.91, pass. Tokens: 2,207. Retries: 0. Anomalies: 0.*
 
 And the backend log is just as boring, which is exactly the point:
 
@@ -78,10 +66,7 @@ No drama. The Copilot isn't there to slow down good work — it's there for the 
 
 ### And here's the one that needed saving
 
-Same pipeline, the Postgres migration task from the top of this post:
-
-![Postgres task with three anomalies detected, landing in Manual Mode](blog-images/06-postgres-task-anomalies.png)
-*Quality 79%. Manual Mode. Three anomalies, not one.*
+Same pipeline, the Postgres migration task from the top of this post. Quality 79%. Manual Mode. Three anomalies, not one.
 
 The Copilot didn't just say "this feels off" — it named exactly what was wrong:
 
@@ -89,8 +74,7 @@ The Copilot didn't just say "this feels off" — it named exactly what was wrong
 - `prose_not_code` — Code output was only 14% actual code — 232 of 1,709 characters
 - `weak_score` — 0.79 sits below the Copilot's own strict bar of 0.88
 
-![Copilot healing attempts and the resulting output](blog-images/07-postgres-task-healing-log.png)
-*Attempt 1 (reword) succeeded on the research step. Attempt 2 (rethink) still wasn't enough on the code step.*
+Attempt 1 (reword) succeeded on the research step. Attempt 2 (rethink) still wasn't enough on the code step.
 
 And here's the actual backend log for that run — nothing dressed up, this is what printed to the terminal in real time:
 
@@ -126,28 +110,19 @@ And here's the actual backend log for that run — nothing dressed up, this is w
   Action: Developer intervention required
 ```
 
-![Full anomaly-to-healing-to-manual-mode sequence in the backend terminal](blog-images/10-backend-terminal-healing.png)
-*Watching this happen live in the terminal is honestly the moment the project clicked for me — the reasoning is right there, timestamped, not hidden in a black box.*
-
 Two strikes, then it stopped and told me why — instead of either looping forever or quietly handing me a 79%-quality answer dressed up as complete.
 
 ---
 
 ### The RAM context store — nothing hidden, even mid-run
 
-Because task state lives entirely in memory, keyed by `task_id`, I can inspect exactly what each agent saw and produced at any point, mid-run:
-
-![Context Inspector showing live RAM snapshot for the Postgres task](blog-images/09-context-inspector.png)
-*The exact research step output, the exact code step output, still sitting in memory — nothing hidden even while a task is in Manual Mode.*
+Because task state lives entirely in memory, keyed by `task_id`, I can inspect exactly what each agent saw and produced at any point, mid-run. The exact research step output, the exact code step output, still sitting in memory — nothing hidden even while a task is in Manual Mode.
 
 ---
 
 ### Why SigNoz isn't a dashboard here — it's the decision engine
 
 This is the part I'm most proud of, because it would've been easy to bolt observability on as an afterthought — a dashboard that just watches. I wanted the Copilot to actually *use* what's being observed.
-
-![Observability page: SigNoz Connected, live metrics, export/read loop](blog-images/08-observability-dashboard.png)
-*Every agent step, every LLM call, every Copilot decision — traced with OpenTelemetry and exported into SigNoz.*
 
 Every agent span (`agent.coordinator`, `agent.researcher`, `agent.coder`, `agent.reviewer`), every `llm.call`, and every Copilot decision (`copilot.evaluate`, `copilot.heal`) shows up in SigNoz with attributes like token count, latency, anomaly type, and retry strategy attached.
 
@@ -157,9 +132,6 @@ But the loop that actually matters is the one on the right side of that page —
 - **LLM Provider Health** — is p95 latency spiking? If the LLM itself is degraded, the retry asks for shorter output instead of blaming the prompt.
 - **Healing Success Rate** — if fixes at this step have historically worked less than 30% of the time, the Copilot escalates faster instead of burning a second attempt on a strategy that rarely pays off.
 - **Recent Error Traces** — the specific failure context from last time gets folded directly into the next fix hint.
-
-![Powered by SigNoz section on the landing page](blog-images/03-powered-by-signoz-landing.png)
-*"Telemetry isn't a side channel here." That line on the landing page is the whole thesis of the project.*
 
 SigNoz also carries the business-level view — `signozforge.tasks.submitted/completed/failed`, `signozforge.copilot.healing_attempts/successes`, `signozforge.copilot.manual_mode_triggers` — so AI quality and operational reliability sit in one place, not two.
 
